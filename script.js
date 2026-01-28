@@ -45,7 +45,7 @@ let appState = {
     customHolidays: [],
     googleConfig: {
         apiKey: 'AIzaSyD-zp3ID1MdWeMMQoSMTzHsGcvXZVnNe4k',
-        clientId: '', // User needs to input this
+        clientId: 'wiky0609@gmail.com', // User provided email, might be wrong but setting it as requested
         sheetId: '1upfeAj22FEoYAgtSckJLQJ-Tg6FWFxU1ea3IdjfhGzM'
     }
 };
@@ -254,6 +254,9 @@ function loadState() {
         appState.cohorts = parsed.cohorts || [];
         appState.customHolidays = parsed.customHolidays || [];
         appState.holidays = [...DEFAULT_HOLIDAYS, ...appState.customHolidays];
+        if (parsed.googleConfig) {
+            appState.googleConfig = parsed.googleConfig;
+        }
     }
 
     // Set default date to today
@@ -482,12 +485,12 @@ function renderScheduler() {
 
         // Date Cell
         const dateTd = document.createElement('td');
-        dateTd.className = 'p-2 text-xs font-mono border-r border-gray-200 bg-white sticky-col';
+        dateTd.className = 'px-2 text-xs font-mono border-r border-gray-200 bg-white sticky-col whitespace-nowrap';
 
-        let dateHtml = `<div class="font-bold">${curr} (${dayName})</div>`;
+        let dateHtml = `<span class="font-bold mr-1">${curr}</span><span class="text-gray-500">(${dayName})</span>`;
         if (holidayName) {
             dateTd.classList.add('holiday-date');
-            dateHtml += `<div class="text-[10px]">${holidayName}</div>`;
+            dateHtml += ` <span class="text-[10px] ml-1 text-red-600">${holidayName}</span>`;
         } else if (isWknd) {
             dateTd.classList.add('weekend-date');
         }
@@ -496,6 +499,7 @@ function renderScheduler() {
 
         // Check for conflicts on this date
         const instructorCounts = {};
+        let rowHasConflict = false;
         appState.cohorts.forEach(c => {
             const schedule = c.processedSchedule.find(s => s.date === curr);
             if (schedule) {
@@ -506,7 +510,7 @@ function renderScheduler() {
         // Cohort Cells
         appState.cohorts.forEach(c => {
             const td = document.createElement('td');
-            td.className = 'p-1 text-center text-xs border-r border-gray-100';
+            td.className = 'px-1 text-center text-xs border-r border-gray-100';
 
             const schedule = c.processedSchedule.find(s => s.date === curr);
 
@@ -515,11 +519,11 @@ function renderScheduler() {
                 if (filterInstructor !== 'all' && schedule.instructor !== filterInstructor) {
                     td.className += ' bg-gray-50 opacity-30'; // Dim irrelevant
                 } else {
-                    // Content
+                    // Content - Compact Single Line
                     td.innerHTML = `
-                        <div class="rounded px-2 py-1 ${schedule.color} shadow-sm border border-black/5">
-                            <div class="font-bold truncate">${schedule.subject}</div>
-                            <div class="text-[10px]">${schedule.instructor}</div>
+                        <div class="rounded px-1.5 py-0.5 ${schedule.color} shadow-sm border border-black/5 flex items-center gap-1 justify-between h-full w-full overflow-hidden">
+                            <span class="font-bold truncate flex-1 text-left">${schedule.subject}</span>
+                            <span class="text-[10px] opacity-80 whitespace-nowrap">${schedule.instructor}</span>
                         </div>
                     `;
 
@@ -527,6 +531,7 @@ function renderScheduler() {
                     if (instructorCounts[schedule.instructor] > 1) {
                         td.querySelector('div').classList.add('conflict-cell');
                         hasGlobalConflict = true;
+                        rowHasConflict = true;
                     }
                 }
             } else {
@@ -537,6 +542,10 @@ function renderScheduler() {
             }
             tr.appendChild(td);
         });
+
+        if (rowHasConflict) {
+            tr.classList.add('conflict-row');
+        }
 
         tableBody.appendChild(tr);
         curr = addDays(curr, 1);
