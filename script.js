@@ -290,8 +290,17 @@ function closeCalendarModal() {
 
 function getCalendarEvents() {
     const events = [];
+    const instructorMap = {}; // { 'YYYY-MM-DD': { 'InstructorName': count } }
 
-    // 1. Cohort Schedules
+    // 1. Pre-calculate Instructor Counts for Conflicts
+    appState.cohorts.forEach(c => {
+        c.processedSchedule.forEach(s => {
+            if (!instructorMap[s.date]) instructorMap[s.date] = {};
+            instructorMap[s.date][s.instructor] = (instructorMap[s.date][s.instructor] || 0) + 1;
+        });
+    });
+
+    // 2. Cohort Schedules
     appState.cohorts.forEach(c => {
         c.processedSchedule.forEach(s => {
             // Map Tailwind colors to hex for FullCalendar (approximate)
@@ -304,19 +313,27 @@ function getCalendarEvents() {
             else if (s.color.includes('teal')) color = '#14b8a6';
             else if (s.color.includes('orange')) color = '#f97316';
 
+            // Check conflict
+            let title = `${s.subject} (${s.instructor})`;
+            if (instructorMap[s.date][s.instructor] > 1) {
+                color = '#dc2626'; // Red for conflict
+                title = `⚠️ ${title}`;
+            }
+
             events.push({
-                title: `${s.subject} (${s.instructor})`,
+                title: title,
                 start: s.date,
                 color: color,
                 allDay: true,
                 extendedProps: {
-                    cohort: c.name
+                    cohort: c.name,
+                    isConflict: instructorMap[s.date][s.instructor] > 1
                 }
             });
         });
     });
 
-    // 2. Holidays
+    // 3. Holidays
     appState.holidays.forEach(h => {
         events.push({
             title: h.name,

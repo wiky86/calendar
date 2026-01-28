@@ -145,14 +145,16 @@
 
                 <div>
                     <h3 class="text-sm font-bold text-gray-900 mb-3">사용자 정의 휴일 추가</h3>
-                    <div class="flex gap-2">
-                        <input type="date" id="customHolidayDate"
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                        <input type="text" id="customHolidayName" placeholder="휴일명"
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input type="date" id="customHolidayDate"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="customHolidayName" placeholder="휴일명"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
                         <button id="addHolidayBtn"
-                            class="px-3 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            class="w-full py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 flex justify-center items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> 추가
                         </button>
                     </div>
                 </div>
