@@ -11,6 +11,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- SheetJS -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- FullCalendar -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <link rel="stylesheet" href="style.css">
     <!-- Google API -->
     <script async defer src="https://apis.google.com/js/api.js" id="gapi-script"></script>
@@ -38,6 +40,13 @@
                 class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                 엑셀 다운로드
+            </button>
+            <div class="h-6 w-px bg-gray-300 mx-1"></div>
+            <button id="calendarViewBtn"
+                class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg shadow-sm transition-colors"
+                title="월별 달력 보기">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                월별 보기
             </button>
             <div class="h-6 w-px bg-gray-300 mx-1"></div>
             <button id="googleSettingsBtn"
