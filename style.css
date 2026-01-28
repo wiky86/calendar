@@ -1,0 +1,79 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Sticky Column Styling */
+th.sticky-col,
+td.sticky-col {
+    position: sticky;
+    left: 0;
+    background-color: inherit;
+    z-index: 10;
+}
+
+/* Table Cell Styling */
+td {
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    height: 32px;
+    /* Compact height */
+    vertical-align: middle;
+}
+
+/* Weekend Styling in Date Column */
+.weekend-date {
+    color: #ef4444;
+    background-color: #fef2f2;
+}
+
+/* Holiday Styling in Date Column */
+.holiday-date {
+    color: #dc2626;
+    background-color: #fee2e2;
+    font-weight: bold;
+}
+
+/* Conflict Styling */
+.conflict-cell {
+    background-color: #fee2e2 !important;
+    /* Red-100 */
+    border: 2px solid #ef4444 !important;
+    /* Red-500 */
+    color: #b91c1c !important;
+    /* Red-700 */
+    position: relative;
+}
+
+.conflict-cell::after {
+    content: '⚠️';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+}
+
+/* Hover Effects */
+tbody tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* Ensure sticky date column stays on top of row hover */
+tbody tr:hover td:first-child {
+    background-color: #f3f4f6;
+    /* Gray-100 */
+}
