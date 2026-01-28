@@ -44,9 +44,9 @@ let appState = {
     holidays: [...DEFAULT_HOLIDAYS],
     customHolidays: [],
     googleConfig: {
-        apiKey: 'AIzaSyD-zp3ID1MdWeMMQoSMTzHsGcvXZVnNe4k',
-        clientId: 'wiky0609@gmail.com', // User provided email, might be wrong but setting it as requested
-        sheetId: '1upfeAj22FEoYAgtSckJLQJ-Tg6FWFxU1ea3IdjfhGzM'
+        apiKey: CONFIG.GOOGLE_API_KEY,
+        clientId: CONFIG.GOOGLE_CLIENT_ID,
+        sheetId: CONFIG.GOOGLE_SHEET_ID
     }
 };
 
@@ -245,6 +245,100 @@ function setupEventListeners() {
     });
 
     document.getElementById('googleSyncBtn').addEventListener('click', handleGoogleSync);
+
+    // Calendar View
+    document.getElementById('calendarViewBtn').addEventListener('click', openCalendarModal);
+    document.getElementById('closeCalendarBtn').addEventListener('click', closeCalendarModal);
+}
+
+// --- Calendar Logic ---
+let calendar = null;
+
+function openCalendarModal() {
+    const modal = document.getElementById('calendarModal');
+    modal.classList.remove('hidden');
+
+    // Initialize or render calendar
+    if (!calendar) {
+        const calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ko',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            height: '100%',
+            events: getCalendarEvents(),
+            eventClick: function (info) {
+                alert(`과목: ${info.event.title}\n일자: ${info.event.startStr}`);
+            }
+        });
+        calendar.render();
+    } else {
+        // Refresh events
+        calendar.removeAllEvents();
+        calendar.addEventSource(getCalendarEvents());
+        calendar.render(); // Re-render to adjust size
+    }
+}
+
+function closeCalendarModal() {
+    document.getElementById('calendarModal').classList.add('hidden');
+}
+
+function getCalendarEvents() {
+    const events = [];
+
+    // 1. Cohort Schedules
+    appState.cohorts.forEach(c => {
+        c.processedSchedule.forEach(s => {
+            // Map Tailwind colors to hex for FullCalendar (approximate)
+            let color = '#3b82f6'; // blue default
+            if (s.color.includes('green')) color = '#22c55e';
+            else if (s.color.includes('purple')) color = '#a855f7';
+            else if (s.color.includes('yellow')) color = '#eab308';
+            else if (s.color.includes('pink')) color = '#ec4899';
+            else if (s.color.includes('indigo')) color = '#6366f1';
+            else if (s.color.includes('teal')) color = '#14b8a6';
+            else if (s.color.includes('orange')) color = '#f97316';
+
+            events.push({
+                title: `${s.subject} (${s.instructor})`,
+                start: s.date,
+                color: color,
+                allDay: true,
+                extendedProps: {
+                    cohort: c.name
+                }
+            });
+        });
+    });
+
+    // 2. Holidays
+    appState.holidays.forEach(h => {
+        events.push({
+            title: h.name,
+            start: h.date,
+            display: 'background',
+            color: '#fee2e2', // Red background
+            textColor: '#dc2626',
+            allDay: true
+        });
+        // Also add a text event for the holiday name if needed, 
+        // but 'background' display doesn't show text. 
+        // Let's add a separate event for text if we want it visible.
+        events.push({
+            title: `🔴 ${h.name}`,
+            start: h.date,
+            color: 'transparent',
+            textColor: '#dc2626',
+            allDay: true
+        });
+    });
+
+    return events;
 }
 
 function loadState() {

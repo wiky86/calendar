@@ -72,7 +72,7 @@ async function syncDataToSheet() {
         });
 
         const spreadsheetId = appState.googleConfig.sheetId;
-        const range = 'Sheet1!A1'; // Start from A1
+        const range = `${CONFIG.SHEET_TAB_NAME}!A1`; // Target specific tab
 
         // Prepare Data
         const data = [];
@@ -126,7 +126,7 @@ async function syncDataToSheet() {
         // Clear sheet first (optional, but good to avoid leftovers)
         await gapi.client.sheets.spreadsheets.values.clear({
             spreadsheetId: spreadsheetId,
-            range: 'Sheet1',
+            range: CONFIG.SHEET_TAB_NAME,
         });
 
         // Write new data
