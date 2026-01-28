@@ -224,26 +224,6 @@ function setupEventListeners() {
     });
 
     // Google Sheets
-    document.getElementById('googleSettingsBtn').addEventListener('click', () => {
-        document.getElementById('gApiKey').value = appState.googleConfig.apiKey;
-        document.getElementById('gClientId').value = appState.googleConfig.clientId;
-        document.getElementById('gSheetId').value = appState.googleConfig.sheetId;
-        document.getElementById('googleSettingsModal').classList.remove('hidden');
-    });
-
-    document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-        document.getElementById('googleSettingsModal').classList.add('hidden');
-    });
-
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        appState.googleConfig.apiKey = document.getElementById('gApiKey').value;
-        appState.googleConfig.clientId = document.getElementById('gClientId').value;
-        appState.googleConfig.sheetId = document.getElementById('gSheetId').value;
-        saveState();
-        document.getElementById('googleSettingsModal').classList.add('hidden');
-        alert('설정이 저장되었습니다.');
-    });
-
     document.getElementById('googleSyncBtn').addEventListener('click', handleGoogleSync);
 
     // Calendar View
