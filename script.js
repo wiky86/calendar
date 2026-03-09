@@ -2,6 +2,7 @@
  * 유비온 디지털교육센터 - K-Digital Training 통합 일정 스케줄러
  * Core Logic & UI Controller
  */
+import { initFirebase, saveStateToFirebase } from './firebase_db.js';
 
 // --- Constants & Data ---
 
@@ -167,9 +168,32 @@ function processCohorts() {
 // --- UI Controller ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Note: Since we use ES Modules, we have to expose functions to window if used directly in HTML
+    window.cloneCohort = cloneCohort;
+    window.deleteCohort = deleteCohort;
+    
+    // Instead of loadState immediately rendering, we set up the listener which will render
+    initFirebase((newState) => {
+        console.log("Received new state from Firebase", newState);
+        appState.cohorts = newState.cohorts || [];
+        appState.customHolidays = newState.customHolidays || [];
+        appState.holidays = [...DEFAULT_HOLIDAYS, ...appState.customHolidays];
+        if (newState.googleConfig) {
+            appState.googleConfig = newState.googleConfig;
+        }
+        
+        // Default UI behaviors
+        const startDateInput = document.getElementById('cohortStartDate');
+        if (startDateInput && !startDateInput.value) {
+            startDateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        renderAll();
+    });
+
+    // Also call loadState (which might just set defaults until firebase response)
     loadState();
     setupEventListeners();
-    renderAll();
 });
 
 function setupEventListeners() {
@@ -203,8 +227,12 @@ function setupEventListeners() {
 
     // Reset
     document.getElementById('resetBtn').addEventListener('click', () => {
-        if (confirm('모든 데이터를 삭제하고 초기화하시겠습니까?')) {
+        if (confirm('모든 데이터를 삭제하고 초기화하시겠습니까? (서버 내용도 모두 삭제됩니다!)')) {
             localStorage.removeItem('bootcampSchedulerState');
+            appState.cohorts = [];
+            appState.customHolidays = [];
+            appState.holidays = [...DEFAULT_HOLIDAYS];
+            saveState(); // Will sync empty state to Firebase
             location.reload();
         }
     });
@@ -339,19 +367,25 @@ function getCalendarEvents() {
 }
 
 function loadState() {
+    // Still look for local storage as a fallback/initial load before firebase kicks in
     const saved = localStorage.getItem('bootcampSchedulerState');
     if (saved) {
-        const parsed = JSON.parse(saved);
-        appState.cohorts = parsed.cohorts || [];
-        appState.customHolidays = parsed.customHolidays || [];
-        appState.holidays = [...DEFAULT_HOLIDAYS, ...appState.customHolidays];
-        if (parsed.googleConfig) {
-            appState.googleConfig = parsed.googleConfig;
-        }
+        try {
+            const parsed = JSON.parse(saved);
+            appState.cohorts = parsed.cohorts || [];
+            appState.customHolidays = parsed.customHolidays || [];
+            appState.holidays = [...DEFAULT_HOLIDAYS, ...appState.customHolidays];
+            if (parsed.googleConfig) {
+                appState.googleConfig = parsed.googleConfig;
+            }
+        } catch(e) {}
     }
 
     // Set default date to today
-    document.getElementById('cohortStartDate').value = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('cohortStartDate');
+    if (startDateInput) {
+        startDateInput.value = new Date().toISOString().split('T')[0];
+    }
 }
 
 function saveState() {
@@ -360,7 +394,11 @@ function saveState() {
         customHolidays: appState.customHolidays,
         googleConfig: appState.googleConfig
     };
+    // Save to local as backup cache
     localStorage.setItem('bootcampSchedulerState', JSON.stringify(toSave));
+    
+    // Sync to Firebase
+    saveStateToFirebase(toSave);
 }
 
 function addCustomHoliday() {
@@ -699,5 +737,6 @@ function exportToExcel() {
 }
 
 // Make functions global for inline HTML calls
-window.cloneCohort = cloneCohort;
-window.deleteCohort = deleteCohort;
+// Now handled in DOMContentLoaded
+// window.cloneCohort = cloneCohort;
+// window.deleteCohort = deleteCohort;
