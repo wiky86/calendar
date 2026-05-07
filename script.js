@@ -51,6 +51,8 @@ let appState = {
     }
 };
 
+let editingCohortId = null; // 현재 수정 중인 기수 ID 추적
+
 // Colors for subjects (Auto-assign) - Premium pastel tones
 const SUBJECT_COLORS = [
     'bg-indigo-50 text-indigo-700 border-indigo-100', 
@@ -176,6 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Note: Since we use ES Modules, we have to expose functions to window if used directly in HTML
     window.cloneCohort = cloneCohort;
     window.deleteCohort = deleteCohort;
+    window.editCohort = editCohort;
+    window.cancelEdit = cancelEdit;
     
     // Instead of loadState immediately rendering, we set up the listener which will render
     initFirebase((newState) => {
@@ -458,22 +462,88 @@ function addCohort() {
 
     if (curriculum.length === 0) return alert('올바른 커리큘럼 형식이 아닙니다.');
 
-    const newCohort = {
-        id: Date.now().toString(),
-        name,
-        startDate,
-        includeWeekends,
-        curriculum
-    };
+    if (editingCohortId) {
+        // 기존 기수 수정
+        const cohortIndex = appState.cohorts.findIndex(c => c.id === editingCohortId);
+        if (cohortIndex > -1) {
+            appState.cohorts[cohortIndex] = {
+                id: editingCohortId,
+                name,
+                startDate,
+                includeWeekends,
+                curriculum
+            };
+        }
+    } else {
+        // 새 기수 추가
+        const newCohort = {
+            id: Date.now().toString(),
+            name,
+            startDate,
+            includeWeekends,
+            curriculum
+        };
+        appState.cohorts.push(newCohort);
+    }
 
-    appState.cohorts.push(newCohort);
     saveState();
+    cancelEdit(); // 입력 폼 초기화 및 수정 모드 해제
+    renderAll();
+}
 
-    // Clear form
+function cancelEdit() {
+    editingCohortId = null;
     document.getElementById('cohortName').value = '';
     document.getElementById('cohortCurriculum').value = '';
+    
+    // 시작일 오늘로 리셋
+    const startDateInput = document.getElementById('cohortStartDate');
+    if (startDateInput) {
+        startDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    document.getElementById('includeWeekends').checked = false;
 
-    renderAll();
+    const btn = document.getElementById('addCohortBtn');
+    btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> 기수 추가 및 계산`;
+    btn.className = "w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 flex justify-center items-center gap-2";
+    
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.remove();
+    
+    lucide.createIcons();
+}
+
+function editCohort(id) {
+    const cohort = appState.cohorts.find(c => c.id === id);
+    if (!cohort) return;
+
+    document.getElementById('cohortName').value = cohort.name;
+    document.getElementById('cohortStartDate').value = cohort.startDate;
+    document.getElementById('includeWeekends').checked = cohort.includeWeekends;
+
+    const curText = cohort.curriculum.map(c => `${c.subject}, ${c.instructor}, ${c.days}`).join('\n');
+    document.getElementById('cohortCurriculum').value = curText;
+
+    editingCohortId = id;
+
+    // 변경 버튼 스타일 수정
+    const btn = document.getElementById('addCohortBtn');
+    btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> 수정 저장하기`;
+    btn.className = "w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 flex justify-center items-center gap-2";
+
+    // 취소 버튼 추가
+    if (!document.getElementById('cancelEditBtn')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelEditBtn';
+        cancelBtn.className = 'w-full py-2.5 mt-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold rounded-xl transition-all duration-300 flex justify-center items-center gap-2 border border-slate-200';
+        cancelBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i> 수정 취소`;
+        cancelBtn.onclick = cancelEdit;
+        btn.parentNode.appendChild(cancelBtn);
+    }
+    
+    lucide.createIcons();
+    // 상단으로 스크롤
+    document.getElementById('tab-cohorts').scrollTop = 0;
 }
 
 function deleteCohort(id) {
@@ -512,17 +582,37 @@ function renderCohortList() {
 
     appState.cohorts.forEach(c => {
         const div = document.createElement('div');
-        div.className = 'bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center';
+        div.className = 'bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center transition-all duration-200 hover:shadow-md hover:border-indigo-200 cursor-pointer group relative overflow-hidden';
+        
+        // 클릭 시 수정 모드 전환 (단, 액션 버튼 클릭 시 방지)
+        div.onclick = (e) => {
+            if (e.target.closest('.action-btn')) return;
+            editCohort(c.id);
+        };
+
+        // 현재 수정 중인 항목 하이라이트
+        if (editingCohortId === c.id) {
+            div.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/30');
+            div.classList.remove('border-slate-200');
+        }
+
         div.innerHTML = `
-            <div>
-                <div class="font-bold text-gray-800 text-sm">${c.name}</div>
-                <div class="text-xs text-gray-500">${c.startDate} 시작 | ${c.curriculum.length}개 과목</div>
+            <div class="flex-1 pr-2">
+                <div class="font-bold text-slate-800 text-[14px] group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                    ${c.name}
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md">수정 클릭</span>
+                </div>
+                <div class="text-[12px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="calendar" class="w-3 h-3"></i> ${c.startDate} 시작
+                    <span class="text-slate-300">|</span>
+                    <i data-lucide="book-open" class="w-3 h-3"></i> ${c.curriculum.length}개 과목
+                </div>
             </div>
-            <div class="flex gap-1">
-                <button onclick="cloneCohort('${c.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="복제">
+            <div class="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity bg-slate-50 p-1 rounded-lg border border-slate-100">
+                <button onclick="cloneCohort('${c.id}')" class="action-btn p-2 text-indigo-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="복제">
                     <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
-                <button onclick="deleteCohort('${c.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="삭제">
+                <button onclick="deleteCohort('${c.id}')" class="action-btn p-2 text-rose-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="삭제">
                     <i data-lucide="trash" class="w-4 h-4"></i>
                 </button>
             </div>
