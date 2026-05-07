@@ -51,11 +51,16 @@ let appState = {
     }
 };
 
-// Colors for subjects (Auto-assign)
+// Colors for subjects (Auto-assign) - Premium pastel tones
 const SUBJECT_COLORS = [
-    'bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-purple-100 text-purple-800',
-    'bg-yellow-100 text-yellow-800', 'bg-pink-100 text-pink-800', 'bg-indigo-100 text-indigo-800',
-    'bg-teal-100 text-teal-800', 'bg-orange-100 text-orange-800'
+    'bg-indigo-50 text-indigo-700 border-indigo-100', 
+    'bg-emerald-50 text-emerald-700 border-emerald-100', 
+    'bg-violet-50 text-violet-700 border-violet-100',
+    'bg-amber-50 text-amber-700 border-amber-100', 
+    'bg-rose-50 text-rose-700 border-rose-100', 
+    'bg-cyan-50 text-cyan-700 border-cyan-100',
+    'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100', 
+    'bg-sky-50 text-sky-700 border-sky-100'
 ];
 
 // --- Core Logic: Date Engine ---
@@ -386,6 +391,9 @@ function loadState() {
     if (startDateInput) {
         startDateInput.value = new Date().toISOString().split('T')[0];
     }
+    
+    // UI 업데이트 트리거 (버그 수정: 초기 로드 시 기존 데이터 랜더링)
+    renderAll();
 }
 
 function saveState() {
@@ -648,17 +656,18 @@ function renderScheduler() {
                 if (filterInstructor !== 'all' && schedule.instructor !== filterInstructor) {
                     td.className += ' bg-gray-50 opacity-30'; // Dim irrelevant
                 } else {
-                    // Content - Compact Single Line
+                    // Content - Premium Chip Design
                     td.innerHTML = `
-                        <div class="rounded px-1.5 py-0.5 ${schedule.color} shadow-sm border border-black/5 flex items-center gap-1 justify-between h-full w-full overflow-hidden">
-                            <span class="font-bold truncate flex-1 text-left">${schedule.subject}</span>
-                            <span class="text-[10px] opacity-80 whitespace-nowrap">${schedule.instructor}</span>
+                        <div class="rounded-lg px-2 py-1.5 ${schedule.color} border shadow-sm flex flex-col justify-center h-[90%] w-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:scale-[1.02] relative cursor-pointer group">
+                            <span class="font-semibold text-[11px] leading-tight truncate w-full text-left text-gray-800 group-hover:text-black">${schedule.subject}</span>
+                            <span class="text-[10px] opacity-80 w-full text-left mt-0.5 flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${schedule.instructor}</span>
                         </div>
                     `;
 
                     // Conflict Check
                     if (instructorCounts[schedule.instructor] > 1) {
-                        td.querySelector('div').classList.add('conflict-cell');
+                        td.querySelector('div').classList.add('conflict-cell', 'border-red-400', 'ring-2', 'ring-red-200');
+                        td.querySelector('div').classList.remove('shadow-sm');
                         hasGlobalConflict = true;
                         rowHasConflict = true;
                     }
@@ -707,9 +716,17 @@ function exportToExcel() {
     rows.forEach(tr => {
         const rowData = [];
         const dateCell = tr.querySelector('td:first-child');
-        const dateText = dateCell.querySelector('.font-bold').textContent.split(' ')[0]; // YYYY-MM-DD
-        const dayText = dateCell.querySelector('.font-bold').textContent.split(' ')[1].replace(/[()]/g, '');
-        const holidayText = dateCell.querySelector('.text-\\[10px\\]')?.textContent || '';
+        
+        // 오류 수정: 엑셀 다운로드 시 방어적 코딩 (DOM 요소가 존재할 때만 처리)
+        if (!dateCell) return;
+        
+        const dateSpan = dateCell.querySelector('.font-bold');
+        const daySpan = dateCell.querySelector('.text-gray-500');
+        const holidaySpan = dateCell.querySelector('.text-\\[10px\\]');
+        
+        const dateText = dateSpan ? dateSpan.textContent.trim() : '';
+        const dayText = daySpan ? daySpan.textContent.replace(/[()]/g, '').trim() : '';
+        const holidayText = holidaySpan ? holidaySpan.textContent.trim() : '';
 
         rowData.push(dateText);
         rowData.push(dayText);
