@@ -656,11 +656,11 @@ function renderScheduler() {
                 if (filterInstructor !== 'all' && schedule.instructor !== filterInstructor) {
                     td.className += ' bg-gray-50 opacity-30'; // Dim irrelevant
                 } else {
-                    // Content - Premium Chip Design
+                    // Content - Premium Chip Design (Bigger text & wrapped lines)
                     td.innerHTML = `
-                        <div class="rounded-lg px-2 py-1.5 ${schedule.color} border shadow-sm flex flex-col justify-center h-[90%] w-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:scale-[1.02] relative cursor-pointer group">
-                            <span class="font-semibold text-[11px] leading-tight truncate w-full text-left text-gray-800 group-hover:text-black">${schedule.subject}</span>
-                            <span class="text-[10px] opacity-80 w-full text-left mt-0.5 flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${schedule.instructor}</span>
+                        <div class="rounded-xl p-2 ${schedule.color} border shadow-sm flex flex-col justify-center min-h-[54px] w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:scale-[1.02] relative cursor-pointer group my-0.5">
+                            <span class="font-bold text-xs leading-snug w-full text-left text-slate-800 group-hover:text-black line-clamp-2">${schedule.subject}</span>
+                            <span class="text-[11px] font-medium opacity-90 w-full text-left mt-1 flex items-center gap-1 text-slate-700"><i data-lucide="user" class="w-3 h-3"></i>${schedule.instructor}</span>
                         </div>
                     `;
 
@@ -735,10 +735,16 @@ function exportToExcel() {
         // Cohort cells
         const cohortCells = Array.from(tr.querySelectorAll('td')).slice(1);
         cohortCells.forEach(td => {
+            if (td.getAttribute('colspan')) return; // 빈 데이터 행 무시
+
             const div = td.querySelector('div');
             if (div) {
-                const subject = div.querySelector('.font-bold').textContent;
-                const instructor = div.querySelector('.text-\\[10px\\]').textContent;
+                const subjectEl = div.querySelector('.font-bold') || div.querySelector('.font-semibold');
+                const instructorEl = div.querySelector('.text-\\[11px\\]') || div.querySelector('.text-\\[10px\\]');
+                
+                const subject = subjectEl ? subjectEl.textContent.trim() : '';
+                // 아이콘 등의 텍스트를 정리하기 위해 불필요한 공백 제거
+                const instructor = instructorEl ? instructorEl.textContent.trim() : '';
                 rowData.push(`${subject} (${instructor})`);
             } else {
                 rowData.push('');

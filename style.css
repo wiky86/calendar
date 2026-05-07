@@ -33,7 +33,7 @@ td.sticky-col {
 td {
     border-bottom: 1px solid #f1f5f9; /* slate-100 */
     border-right: 1px solid #f1f5f9;
-    height: 48px; /* Slightly taller for the chips */
+    height: 64px; /* 높이를 충분히 확보하여 과목명 두 줄 처리 가능하도록 개선 */
     vertical-align: middle;
     transition: background-color 0.2s ease;
 }
