@@ -180,6 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteCohort = deleteCohort;
     window.editCohort = editCohort;
     window.cancelEdit = cancelEdit;
+    window.moveCohortUp = moveCohortUp;
+    window.moveCohortDown = moveCohortDown;
     
     // Instead of loadState immediately rendering, we set up the listener which will render
     initFirebase((newState) => {
@@ -553,6 +555,30 @@ function deleteCohort(id) {
     renderAll();
 }
 
+function moveCohortUp(id, event) {
+    if (event) event.stopPropagation();
+    const index = appState.cohorts.findIndex(c => c.id === id);
+    if (index > 0) {
+        const temp = appState.cohorts[index];
+        appState.cohorts[index] = appState.cohorts[index - 1];
+        appState.cohorts[index - 1] = temp;
+        saveState();
+        renderAll();
+    }
+}
+
+function moveCohortDown(id, event) {
+    if (event) event.stopPropagation();
+    const index = appState.cohorts.findIndex(c => c.id === id);
+    if (index > -1 && index < appState.cohorts.length - 1) {
+        const temp = appState.cohorts[index];
+        appState.cohorts[index] = appState.cohorts[index + 1];
+        appState.cohorts[index + 1] = temp;
+        saveState();
+        renderAll();
+    }
+}
+
 function cloneCohort(id) {
     const cohort = appState.cohorts.find(c => c.id === id);
     if (!cohort) return;
@@ -580,7 +606,7 @@ function renderCohortList() {
     const list = document.getElementById('cohortList');
     list.innerHTML = '';
 
-    appState.cohorts.forEach(c => {
+    appState.cohorts.forEach((c, index) => {
         const div = document.createElement('div');
         div.className = 'bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center transition-all duration-200 hover:shadow-md hover:border-indigo-200 cursor-pointer group relative overflow-hidden';
         
@@ -596,6 +622,9 @@ function renderCohortList() {
             div.classList.remove('border-slate-200');
         }
 
+        const isFirst = index === 0;
+        const isLast = index === appState.cohorts.length - 1;
+
         div.innerHTML = `
             <div class="flex-1 pr-2">
                 <div class="font-bold text-slate-800 text-[14px] group-hover:text-indigo-600 transition-colors flex items-center gap-2">
@@ -608,11 +637,18 @@ function renderCohortList() {
                     <i data-lucide="book-open" class="w-3 h-3"></i> ${c.curriculum.length}개 과목
                 </div>
             </div>
-            <div class="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity bg-slate-50 p-1 rounded-lg border border-slate-100">
-                <button onclick="cloneCohort('${c.id}')" class="action-btn p-2 text-indigo-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="복제">
+            <div class="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity bg-slate-50 p-1 rounded-lg border border-slate-100">
+                <button onclick="moveCohortUp('${c.id}', event)" class="action-btn p-1.5 text-slate-600 hover:bg-white hover:shadow-sm rounded-md transition-all ${isFirst ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}" title="위로 이동" ${isFirst ? 'disabled' : ''}>
+                    <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                </button>
+                <button onclick="moveCohortDown('${c.id}', event)" class="action-btn p-1.5 text-slate-600 hover:bg-white hover:shadow-sm rounded-md transition-all ${isLast ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}" title="아래로 이동" ${isLast ? 'disabled' : ''}>
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+                <div class="w-px bg-slate-200 self-stretch my-1 mx-0.5"></div>
+                <button onclick="cloneCohort('${c.id}')" class="action-btn p-1.5 text-indigo-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="복제">
                     <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
-                <button onclick="deleteCohort('${c.id}')" class="action-btn p-2 text-rose-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="삭제">
+                <button onclick="deleteCohort('${c.id}')" class="action-btn p-1.5 text-rose-600 hover:bg-white hover:shadow-sm rounded-md transition-all" title="삭제">
                     <i data-lucide="trash" class="w-4 h-4"></i>
                 </button>
             </div>
